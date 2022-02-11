@@ -1,0 +1,447 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
+<!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Urejevalko</title>
+
+    <!-- You must reference the Office JavaScript API from inside the <head> section of the page to ensure that the API is fully initialized prior to any body elements. -->
+    <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js" type="text/javascript" ></script>
+    
+    <!-- Libraries -->
+    <script src="/libs/jquery/jquery.min.js"></script>
+    <script src="/libs/axios/axios.min.js"></script>
+    <script src="/scripts/AudioChunkProcessor.js"></script>
+    <script src="/libs/bootstrap/bootstrap.min.js"></script>
+
+    <!-- Template styles -->
+    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+    <link href="/libs/bootstrap/bootstrap.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="ms-font-m ms-welcome ms-Fabric">
+    
+    <div class="row justify-content-center m-2">
+        <div id="accordion" class="col-md-8">
+            
+            <div class="card">
+                <div class="card-header bg-white" id="authenticationHeader">
+                    <h5 class="mb-0">
+                        <button id="authButton" class="btn btn-link" data-toggle="collapse" data-target="#collapseAuth" aria-expanded="true" aria-controls="collapseAuth">
+                            Avtentikacija
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapseAuth" class="collapse" aria-labelledby="authenticationHeader" data-parent="#accordion">
+                    <div class="card-body pb-2 pt-0">
+                        <form action="" method="">
+                            <div class="form-group row">
+                                <label for="email_address" class="col-md-4 col-form-label text-md-right"><small>Uporabnik</small></label>
+                                <div class="col-md-6">
+                                    <input type="text" id="username" style="text-decoration: none;" class="form-control" name="email-address" required autofocus>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="password" class="col-md-4 col-form-label text-md-right">Geslo</label>
+                                <div class="col-md-6">
+                                    <input type="password" id="password" class="form-control" name="password" required>
+                                </div>
+                            </div>
+                            <div class="form-group row pt-2">
+                                <div class="col-md-6 offset-md-4">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input id="rememberMe" type="checkbox" name="remember"> Zapomni si me
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center mb-3">
+        <button id="startBtn" type="button" class="btn-round-start">Start</button>
+        <button id="stopBtn" type="button" class="btn-round-stop breathing-button" style="display: none;">Stop</button>
+    </div>
+
+    <div class="row justify-content-center m-2">
+        <div id="accordion2" class="col-md-8">
+            
+            <div class="card">
+                <div class="card-header bg-white" id="commandsHeader">
+                    <div class="row justify-content-between">
+                        <div class="col-8 form-group">
+                            <h5 class="mb-0">
+                                <button id="commandsButton" class="btn btn-link" data-toggle="collapse" data-target="#collapseCommands" aria-expanded="true" aria-controls="collapseCommands">
+                                    Komande
+                                </button>
+                            </h5>
+                        </div>
+                        <div class="col-auto mt-2">
+                            <label class="switch">
+                                <input id="commandsEnabled" type="checkbox">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div id="collapseCommands" class="collapse" data-parent="#accordion2">
+                    <div class="card-body pb-2 pt-0">
+
+                        <div class="accordion mt-4" id="accordion3">
+
+                            <div class="card mt-2">
+                                <div class="card-header" id="deletingHeader">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseDeleting"
+                                            aria-expanded="true" aria-controls="collapseDeleting">
+                                            Brisanje
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div id="collapseDeleting" class="collapse" aria-labelledby="deletingHeader" data-parent="#accordion3">
+                                    <div class="card-body">
+                                        
+                                        <div>
+                                            <h5>Brisanje</h5>
+                                            <small>[<i>komande</i>]: /briši/izbriši/pobriši/zbriši</small>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">
+                                                    <strong>Beseda:</strong>
+                                                    <ul>
+                                                        <li>/[<i>komanda</i>]/</li>
+                                                        <li>/[<i>komanda</i>] besedo/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Stavek:</strong>
+                                                    <ul>
+                                                        <li>/[<i>komanda</i>] stavek/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Ločila:</strong>
+                                                    <ul>
+                                                        <li>/[<i>komanda</i>] vejico/</li>
+                                                        <li>/[<i>komanda</i>] piko/</li>
+                                                        <li>/[<i>komanda</i>] klicaj/</li>
+                                                        <li>/[<i>komanda</i>] vprašaj/</li>
+                                                        <li>/[<i>komanda</i>] dvopičje/</li>
+                                                        <li>/[<i>komanda</i>] podpičje/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Odstavek:</strong>
+                                                    <ul>
+                                                        <li>/[<i>komanda</i>] odstavek/</li>
+                                                        <li>/[<i>komanda</i>] paragraf/</li>
+                                                    </ul>
+                                                </li>
+                                                
+                                            </ul>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-2">
+                                <div class="card-header" id="insertingHeader">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseInserting"
+                                            aria-expanded="false" aria-controls="collapseInserting">
+                                            Vstavljanje
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div id="collapseInserting" class="collapse" aria-labelledby="insertingHeader" data-parent="#accordion3">
+                                    <div class="card-body">
+                                        <div>
+                                            <h5>Vstavljanje</h5>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">
+                                                    <strong>Vrstica:</strong>
+                                                    <ul>
+                                                        <li>/nova vrsta/</li>
+                                                        <li>/nova vrstica/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Odstavek:</strong>
+                                                    <ul>
+                                                        <li>/nov odstavek/</li>
+                                                        <li>/nov paragraf/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Ločila:</strong>
+                                                    <ul>
+                                                        <li>/vejica/</li>
+                                                        <li>/pika/</li>
+                                                        <li>/klicaj/</li>
+                                                        <li>/vprašaj/</li>
+                                                        <li>/dvopičje/</li>
+                                                        <li>/podpičje/</li>
+                                                    </ul>
+                                                </li>
+                                                
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-2">
+                                <div class="card-header" id="editingHeader">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseEditing"
+                                            aria-expanded="false" aria-controls="collapseEditing">
+                                            Urejanje
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div id="collapseEditing" class="collapse" aria-labelledby="editingHeader" data-parent="#accordion3">
+                                    <div class="card-body">
+                                        <div>
+                                            <h5>Vstavljanje</h5>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">
+                                                    <strong>Vrstica:</strong>
+                                                    <ul>
+                                                        <li>/nova vrsta/</li>
+                                                        <li>/nova vrstica/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Odstavek:</strong>
+                                                    <ul>
+                                                        <li>/nov odstavek/</li>
+                                                        <li>/nov paragraf/</li>
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <strong>Ločila:</strong>
+                                                    <ul>
+                                                        <li>/vejica/</li>
+                                                        <li>/pika/</li>
+                                                        <li>/klicaj/</li>
+                                                        <li>/vprašaj/</li>
+                                                        <li>/dvopičje/</li>
+                                                        <li>/podpičje/</li>
+                                                    </ul>
+                                                </li>
+                                                
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center">    
+        <button id="settingsBtn" class="btn btn-link" data-toggle="collapse" data-target="#collapseSettings" aria-expanded="false" aria-controls="collapseSettings">
+            Nastavitve
+        </button>
+    </div>
+    <div class="collapse mx-2 mt-2" id="collapseSettings">
+        <div class="card card-body">
+
+            <div id="spinnerContainer" class="row justify-content-center">
+                <div class="spinner-border text-primary col-auto" role="status">
+                    <span class="sr-only"></span>
+                </div>
+            </div>
+
+            <div id="settingsContainer" hidden>
+                <div class="row justify-content-between" hidden>
+                    <div class="col-auto">
+                        transcriptionDoInterim
+                    </div>
+                    <div class="col-auto">
+                        <label class="switch">
+                            <input id="transcriptionDoInterim" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row justify-content-between mt-2">
+                    <div class="col-auto">
+                        Samodejno postavljanje ločil 
+                    </div>
+                    <div class="col-auto">
+                        <label class="switch">
+                            <input id="transcriptionDoPunctuation" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row justify-content-between mt-2" hidden>
+                    <div class="col-auto">
+                        transcriptionDoInterimPunctuation
+                    </div>
+                    <div class="col-auto">
+                        <label class="switch">
+                            <input id="transcriptionDoInterimPunctuation" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row justify-content-between mt-2" hidden>
+                    <div class="col-auto">
+                        transcriptionDoNormalisation
+                    </div>
+                    <div class="col-auto">
+                        <label class="switch">
+                            <input id="transcriptionDoNormalisation" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>     
+                <div class="row justify-content-between mt-2" hidden>
+                    <div class="col-auto">
+                        transcriptionDoDictation
+                    </div>
+                    <div class="col-auto">
+                        <label class="switch">
+                            <input id="transcriptionDoDictation" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>       
+                <div class="row justify-content-between mt-2" hidden>
+                    <div class="col-auto">
+                        transcriptionShowUnks
+                    </div>
+                    <div class="col-auto">
+                        <label class="switch">
+                            <input id="transcriptionShowUnks" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>       
+                <div class="row justify-content-between mt-2" hidden>
+                    <div class="col-auto">
+                        Endpoint
+                    </div>
+                    <div class="col-auto">
+                        <select id="transcriptionEndpointingType">
+                        </select>
+                    </div>
+                </div>       
+                <div class="row justify-content-center mt-2">
+                    <div class="col-auto" id="updateConfigDiv">
+                        <button id="updateConfig" type="button" class="mt-2 btn btn-primary btn-sm col-auto">Shrani</button>
+                    </div>
+                    <div id="spinnerDiv" class="spinner-border text-primary col-auto mt-2" role="status" hidden>
+                        <span class="sr-only"></span>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </div>
+    </div>
+      
+
+    <!-- <div class="col-12 d-flex justify-content-center p-2">    
+        <div class="form-group">
+            <input type="text" class="form-control" id="deleteWord" placeholder="Enter word">        
+        </div>
+        <button id="deleteBtn" type="button" class="btn btn-sm btn-light col-2 mx-2">Delete word</button>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center p-2">    
+        <button id="testBtn" type="button" class="btn btn-sm btn-light col-2 mx-2">Test btn</button>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center p-2">    
+        <button id="delWord" type="button" class="btn btn-sm btn-light col-2 mx-2">Del word</button>
+    </div> -->
+
+   
+
+</body>
+
+<script>
+
+    var deletingCommands = ["delete_sentence", "delete_last_word", "delete_paragraph"]
+    var insertingCommands = ["insert_new_line"]
+    var punctCommands = ["comma", "full_stop", "colon", "semicolon"]
+    var allCommands = [deletingCommands, insertingCommands, punctCommands]
+
+    window.onload = function() {
+        
+        valuesSetup()
+        listenerSetup()
+
+    };
+
+
+    function valuesSetup() {
+        var auth = localStorage.getItem("auth")
+        var rememberMe = localStorage['remember_me'] === 'true'
+
+        if (auth !== null) {
+            auth = JSON.parse(auth)
+            document.getElementById("username").value = auth.username
+		    document.getElementById("password").value = auth.password
+        }
+        
+        document.getElementById("rememberMe").checked = rememberMe
+
+        if (!rememberMe) {
+            document.getElementById("authButton").click()
+        }
+
+        $("#commandsEnabled").prop("checked", localStorage.getItem("commands_enabled") === "true");
+        if (localStorage.getItem("commands_enabled") === "true") {
+            document.getElementById("commandsButton").click()
+        }
+            
+
+    }
+
+    function listenerSetup() {
+
+        const rememberMeCheckbox = document.getElementById("rememberMe")
+
+        rememberMeCheckbox.addEventListener('change', (event) => {
+            if (event.currentTarget.checked) {
+                var newAuth = { 'username': document.getElementById("username").value, 'password': document.getElementById("password").value }
+                localStorage.setItem("auth", JSON.stringify(newAuth))
+                localStorage.setItem("remember_me", true)
+            } else {
+                localStorage.removeItem("auth")
+                localStorage.setItem("remember_me", false)
+            }
+        })
+    
+        document.getElementById("commandsEnabled").addEventListener('change', (event) => {
+            localStorage.setItem("commands_enabled", event.currentTarget.checked)
+        })
+
+    }
+
+    
+
+</script>
+
+</html>
