@@ -1,10 +1,10 @@
+import TruebarClient from './truebar/TruebarClient'
+import { Microphone } from './truebar/Microphone'
+import WordUtils from './utilities/WordUtils'
+import Utilities from './utilities/Utilities'
+import Api from './network/Api'
 
-import TruebarClient from "./truebar/TruebarClient.js"
-import {Microphone} from "./truebar/Microphone.js";
-import WordUtils from "./utilities/WordUtils.js"
-import Utilities from "./utilities/Utilities.js"
-
-let AppState = {
+const AppState = {
 	truebarClient: undefined,
 	microphone: undefined,
 	sessionInfo: undefined,
@@ -12,24 +12,23 @@ let AppState = {
 	selectingSentence: false,
 	selectingSentenceIndex: -1,
 
-	oldInterim: "",
- 	newInterim: "",
+	oldInterim: '',
+	newInterim: '',
 
 	intervalId: -1,
 
 	fontStyle: {
-		color: "black",
+		color: 'black',
 		isBold: false,
 		isItalic: false,
 		upperCase: false,
-		size: 11
-	}
+		size: 11,
+	},
 }
 
-/* global document, Office, Word */
+// global document, Office, Word
 Office.onReady((info) => {
 	if (info.host === Office.HostType.Word) {
-
 		// Determine if the user's version of Office supports all the Office.js APIs that are used in the tutorial.
 		if (!Office.context.requirements.isSetSupported('WordApi', '1.3')) {
 			console.log('Sorry. The tutorial add-in uses Word.js APIs that are not available in your version of Office.');
@@ -37,9 +36,7 @@ Office.onReady((info) => {
 	}
 });
 
-
 listenerSetup()
-
 
 async function openSession() {
 	AppState.sessionInfo = await AppState.truebarClient.openSession((msg) => {
@@ -49,71 +46,60 @@ async function openSession() {
 
 function isAuthError(isError) {
 	if (isError) {
-		document.getElementById("username").classList.add("is-invalid")
-		document.getElementById("password").classList.add("is-invalid")
+		document.getElementById('username').classList.add('is-invalid')
+		document.getElementById('password').classList.add('is-invalid')
 	} else {
-		document.getElementById("username").classList.remove("is-invalid")
-		document.getElementById("password").classList.remove("is-invalid")
+		document.getElementById('username').classList.remove('is-invalid')
+		document.getElementById('password').classList.remove('is-invalid')
 	}
 }
 
 function setStartBreathing() {
-	let btn = document.getElementById("startBtn")
-	btn.classList.add("breathing-button")
-	btn.innerText = "Povezovanje"
+	const btn = document.getElementById('startBtn')
+	btn.classList.add('breathing-button')
+	btn.innerText = 'Povezovanje'
 }
 
 function showStop() {
-	let btn = document.getElementById("startBtn")
-	btn.style.display = "none"
-	btn.innerText = "Start"
-	btn.classList.remove("breathing-button")
-	document.getElementById("stopBtn").style.display = "block"
+	const btn = document.getElementById('startBtn')
+	btn.style.display = 'none'
+	btn.innerText = 'Start'
+	btn.classList.remove('breathing-button')
+	document.getElementById('stopBtn').style.display = 'block'
 }
 
-
-
 function showStartBtn() {
-	document.getElementById("startBtn").style.display = "block"
-	document.getElementById("stopBtn").style.display = "none"
+	document.getElementById('startBtn').style.display = 'block'
+	document.getElementById('stopBtn').style.display = 'none'
 }
 
 async function closeSession() {
-	if (AppState.intervalId != -1)
-		clearInterval(AppState.intervalId) 
+	if (AppState.intervalId !== -1) clearInterval(AppState.intervalId)
 
 	// Stop audio capturing
-	if (AppState.microphone !== undefined) {
-		await AppState.microphone.lockAudio();
-	}
+	if (AppState.microphone !== undefined) await AppState.microphone.lockAudio();
 
 	// Request session closing and wait for all already sent audio data to finish processing
 	if (AppState.truebarClient !== undefined) {
-		let closeMsg = await AppState.truebarClient.closeSession();
-		console.log("Session closed with message: " + closeMsg)
+		const closeMsg = await AppState.truebarClient.closeSession();
+		console.log(`Session closed with message: ${closeMsg}`)
 	}
 }
 
 function handleInterimMessage(message) {
-	var content = message.transcript.content
-	var array = JSON.parse(content);
+	const { content } = message.transcript
+	const array = JSON.parse(content);
 
 	AppState.oldInterim = AppState.newInterim
-	AppState.newInterim = ""
+	AppState.newInterim = ''
 
 	for (let i = 0; i < array.length; i++) {
-		let msg = array[i]
-		// console.log(msg)
-		
-		if (msg.spaceBefore == true)
-			AppState.newInterim += " " + msg.text
-		else {
-			AppState.newInterim += msg.text
-		}
-			
+		const msg = array[i]
+
+		if (msg.spaceBefore === true) AppState.newInterim += ` ${msg.text}`
+		else AppState.newInterim += msg.text
 	}
 
-	//check if commands are enabled
 	if (message.isFinal) {
 
 		if (localStorage["commands_enabled"] === "true") {
@@ -318,24 +304,20 @@ function handleInterimMessage(message) {
 					handleInsertion(AppState.oldInterim, AppState.newInterim)
 				}
 			}
-	
+
 		} else {
 			if (!AppState.selectingSentence)
 				handleInsertion(AppState.oldInterim, AppState.newInterim)
 		}
+
+		AppState.oldInterim = ""
+		AppState.newInterim = ""
 
 	} else {
 		if (!AppState.selectingSentence)
 			handleInsertion(AppState.oldInterim, AppState.newInterim)
 	}
 
-	if (message.isFinal == true) {
-		AppState.oldInterim = ""
-		AppState.newInterim = ""
-	}
-
-	// console.log("old: " + AppState.oldInterim)
-	// console.log("new: " + AppState.newInterim)
 }
 
 function handleSentenceSelectionCommands(commands) {
@@ -505,19 +487,7 @@ async function updateConfig() {
 	document.getElementById('updateConfigDiv').hidden = true
 	document.getElementById('spinnerDiv').hidden = false
 
-	await axios("https://demo-api.true-bar.si/api/client/configuration", {
-		method: 'PATCH',
-		headers: {Authorization: `Bearer ${AppState.truebarClient.auth.access_token}`},
-		data: {
-			transcriptionDoInterim: document.getElementById('transcriptionDoInterim').checked + "",
-			transcriptionDoPunctuation: document.getElementById('transcriptionDoPunctuation').checked + "",
-			transcriptionDoInterimPunctuation: document.getElementById('transcriptionDoInterimPunctuation').checked + "",
-			transcriptionDoNormalisation: document.getElementById('transcriptionDoNormalisation').checked + "",
-			transcriptionDoDictation: document.getElementById('transcriptionDoDictation').checked + "",
-			transcriptionShowUnks: document.getElementById('transcriptionShowUnks').checked + "",
-			transcriptionEndpointingType: document.getElementById('transcriptionEndpointingType').value,
-		}
-	})
+	await Api.patchConfig(AppState.truebarClient.auth.access_token, document.getElementById('transcriptionDoPunctuation').checked)
 	
 	if (AppState.truebarClient != undefined && AppState.truebarClient.ws != undefined) {
 		await closeSession().then(function () {
@@ -526,7 +496,7 @@ async function updateConfig() {
 			})
 		})
 	} else {
-		AppState.truebarClient.configData = await TruebarClient.getConfig(AppState.truebarClient.auth.access_token)
+		AppState.truebarClient.configData = await Api.getConfig(AppState.truebarClient.auth.access_token)
 	}
 	
 	document.getElementById('updateConfigDiv').hidden = false
@@ -535,22 +505,7 @@ async function updateConfig() {
 }
 
 function setConfigUI(data) {
-	$("#transcriptionDoInterim").prop('checked', data["transcriptionDoInterim"]);
 	$("#transcriptionDoPunctuation").prop('checked', data["transcriptionDoPunctuation"]);
-	$("#transcriptionDoInterimPunctuation").prop('checked', data["transcriptionDoInterimPunctuation"]);
-	$("#transcriptionDoNormalisation").prop('checked', data["transcriptionDoNormalisation"]);
-	$("#transcriptionDoDictation").prop('checked', data["transcriptionDoDictation"]);
-	$("#transcriptionShowUnks").prop('checked', data["transcriptionShowUnks"]);
-	var mySelect = document.getElementById("transcriptionEndpointingType");
-	for (var i=0; i < data["transcriptionEndpointingTypeOptions"].length; i++) {
-		var option = document.createElement("option");
-		option.text = data["transcriptionEndpointingTypeOptions"][i];
-		mySelect.add(option, mySelect[i]);
-
-		if (option.text === data["transcriptionEndpointingType"]) {
-			mySelect.value = option.text
-		}
-	}
 }
 
 function listenerSetup() {

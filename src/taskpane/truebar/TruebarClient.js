@@ -1,4 +1,17 @@
+import Api from "../network/Api.js"
+
 export default class TruebarClient {
+
+    constructor(truebarBaseUrl, truebarWsUrl, requestTimeoutMs, authUrl, auth, configData) {
+        this.truebarBaseUrl = truebarBaseUrl;
+        this.truebarWsUrl = truebarWsUrl;
+        this.requestTimeoutMs = requestTimeoutMs;
+        this.wsClosedReason = undefined;
+        this.auth = auth;
+        this.messages = [];
+        this.configData = configData;
+        this.createTokenRefresher(authUrl, auth)
+    }
 
     static async build(authServiceHost, authServicePort, truebarServiceHost, truebarServicePort, useSSL, requestTimeoutMs, username, password, isAuthError) {
         // Build URL for authentication requests
@@ -17,84 +30,18 @@ export default class TruebarClient {
         truebarWsUrl += "/ws"                                                          // append websocket endpoint
 
         // Authenticate with username and password for the first time
-        let auth = await TruebarClient.authenticateWithUsernameAndPassword(authUrl, requestTimeoutMs, username, password, isAuthError)
-        let configData = await TruebarClient.getConfig(auth.access_token)
+        let auth = await Api.authenticateWithUsernameAndPassword(authUrl, requestTimeoutMs, username, password, isAuthError)
+        let configData = await Api.getConfig(auth.access_token)
 
         // Create TruebarClient
         return new TruebarClient(truebarBaseUrl, truebarWsUrl, requestTimeoutMs, authUrl, auth, configData)
-    }
-    
-    static async getConfig(token) { 
-            
-        let response = await axios('http://localhost:3001/configuration?token=' + token, {
-            method: 'GET',
-        }).catch(function (error) {
-            console.log(error.response.status)
-            return "error"
-        });
-        
-        return response.data
-    }
-
-    static async authenticateWithUsernameAndPassword(url, timeout, username, password, isAuthError) {
-        const data = new URLSearchParams();
-        data.append('grant_type', 'password');
-        data.append('username', username);
-        data.append('password', password);
-        data.append('client_id', "truebar-client");
-
-        let response = await axios(url, {
-            method: 'POST',
-            timeout: timeout,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            data: data
-        }).catch(function (error) {
-            console.log(error.response.status)
-            isAuthError(true)
-            document.getElementById("stopBtn").click()
-            return "error"
-          });
-            
-        return response.data
-    }
-
-    static async authenticateWithRefreshToken(url, timeout, refreshToken) {
-        const data = new URLSearchParams();
-        data.append('grant_type', 'refresh_token');
-        data.append('refresh_token', refreshToken);
-        data.append('client_id', "truebar-client");
-
-        let response = await axios(url, {
-            method: 'POST',
-            timeout: timeout,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            data: data
-        })
-
-        return response.data
-    }
-
-
-    constructor(truebarBaseUrl, truebarWsUrl, requestTimeoutMs, authUrl, auth, configData) {
-        this.truebarBaseUrl = truebarBaseUrl;
-        this.truebarWsUrl = truebarWsUrl;
-        this.requestTimeoutMs = requestTimeoutMs;
-        this.wsClosedReason = undefined;
-        this.auth = auth;
-        this.messages = [];
-        this.configData = configData;
-        this.createTokenRefresher(authUrl, auth)
     }
 
     createTokenRefresher(authUrl) {
         // Set timeout for requestTimeout seconds before access_token expires
         setTimeout(async () => {
                 // Refresh token
-                this.auth = await TruebarClient.authenticateWithRefreshToken(authUrl, this.auth.refresh_token)
+                this.auth = await Api.authenticateWithRefreshToken(authUrl, this.auth.refresh_token)
 
                 // Create new timeout for next refresh
                 this.createTokenRefresher(authUrl)
