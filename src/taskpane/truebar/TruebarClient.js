@@ -1,4 +1,4 @@
-import Api from "../network/Api"
+import Api from "../network/Api.js"
 
 export default class TruebarClient {
 

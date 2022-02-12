@@ -304,20 +304,18 @@ function handleInterimMessage(message) {
 					handleInsertion(AppState.oldInterim, AppState.newInterim)
 				}
 			}
-	
+
 		} else {
 			if (!AppState.selectingSentence)
 				handleInsertion(AppState.oldInterim, AppState.newInterim)
 		}
 
+		AppState.oldInterim = ""
+		AppState.newInterim = ""
+
 	} else {
 		if (!AppState.selectingSentence)
 			handleInsertion(AppState.oldInterim, AppState.newInterim)
-	}
-
-	if (message.isFinal == true) {
-		AppState.oldInterim = ""
-		AppState.newInterim = ""
 	}
 
 }
@@ -508,17 +506,6 @@ async function updateConfig() {
 
 function setConfigUI(data) {
 	$("#transcriptionDoPunctuation").prop('checked', data["transcriptionDoPunctuation"]);
-	var mySelect = document.getElementById("transcriptionEndpointingType");
-	
-	for (var i=0; i < data["transcriptionEndpointingTypeOptions"].length; i++) {
-		var option = document.createElement("option");
-		option.text = data["transcriptionEndpointingTypeOptions"][i];
-		mySelect.add(option, mySelect[i]);
-
-		if (option.text === data["transcriptionEndpointingType"]) {
-			mySelect.value = option.text
-		}
-	}
 }
 
 function listenerSetup() {
