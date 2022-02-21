@@ -43,6 +43,10 @@ export default class utilities {
         }
     }
     
+    static isCrka(string) {
+        return string == "črke" || string == "črko" || string == "črka"
+    }
+
     static isNumber(string) {
         if (string === "1" || string === "ena" || string === "en" || string === "eno" 
         ||	string === "2" || string === "dva" || string === "dve" 
