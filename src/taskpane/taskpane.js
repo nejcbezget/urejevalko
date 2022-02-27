@@ -12,6 +12,10 @@ const AppState = {
 	selectingSentence: false,
 	selectingSentenceIndex: -1,
 
+	selectingString: false,
+	selectingStringIndex: -1,
+	selectedString: "",
+
 	oldInterim: '',
 	newInterim: '',
 
@@ -23,6 +27,27 @@ const AppState = {
 		isItalic: false,
 		upperCase: false,
 		size: 11,
+	},
+
+	toggleBold: function(isBold) {
+		this.fontStyle.isBold = isBold
+		updateCurrentStyle()
+	},
+	toggleItalic: function(isItalic) {
+		this.fontStyle.isItalic = isItalic
+		updateCurrentStyle()
+	},
+	toggleCase: function(upperCase) {
+		this.fontStyle.upperCase = upperCase
+		updateCurrentStyle()
+	},
+	setSize: function(size) {
+		this.fontStyle.size = size
+		updateCurrentStyle()
+	},
+	setColor: function(color) {
+		this.fontStyle.color = color
+		updateCurrentStyle()
 	},
 }
 
@@ -73,6 +98,39 @@ function showStartBtn() {
 	document.getElementById('stopBtn').style.display = 'none'
 }
 
+function updateCurrentStyle() {
+
+	document.getElementById('current-color').style.backgroundColor = AppState.fontStyle.color
+	document.getElementById('current-size').innerText = AppState.fontStyle.size
+
+	let bold = document.getElementById('current-bold')
+	if (AppState.fontStyle.isBold) {
+		bold.innerText = "Vključeno"
+		bold.classList.remove("badge-secondary")
+	} else {
+		bold.innerText = "Izključeno"
+		bold.classList.add("badge-secondary")
+	}
+
+	let italic = document.getElementById('current-italic')
+	if (AppState.fontStyle.isItalic) {
+		italic.innerText = "Vključeno"
+		italic.classList.remove("badge-secondary")
+	} else {
+		italic.innerText = "Izključeno"
+		italic.classList.add("badge-secondary")
+	}
+
+	let upperCase = document.getElementById('current-uppercase')
+	if (AppState.fontStyle.upperCase) {
+		upperCase.innerText = "Vključeno"
+		upperCase.classList.remove("badge-secondary")
+	} else {
+		upperCase.innerText = "Izključeno"
+		upperCase.classList.add("badge-secondary")
+	}
+}
+
 async function closeSession() {
 	if (AppState.intervalId !== -1) clearInterval(AppState.intervalId)
 
@@ -112,6 +170,8 @@ function handleInterimMessage(message) {
 
 			if (AppState.selectingSentence) {
 				handleSentenceSelectionCommands(commands)
+			} else if (AppState.selectingString) {
+				handleStringSelectionCommands(commands)
 			} else {
 				if (commands[0] === "vejica") {
 					WordUtils.deleteLastWord(1).then(function () {
@@ -144,17 +204,16 @@ function handleInterimMessage(message) {
 						WordUtils.trimThenInsert(";", "End")
 					})
 				} 
-	
 				else if (commands[0] === "velikost") {
 					if (Utilities.isNumber(commands[1])) {
 						WordUtils.deleteLastWord(2).then(function () {
-							AppState.fontStyle.size = parseInt(Utilities.getNumber(commands[1]))
+							AppState.setSize(parseInt(Utilities.getNumber(commands[1])))
 							currentCommand(commands.join(" "), true)
 							WordUtils.deleteWhiteSpace()
 						})
 					} 
 				} 
-	
+
 				else if (commands[0] === "briši" || commands[0] === "zbriši" || commands[0] === "pobriši" || commands[0] === "izbriši") {
 		
 					if (size == 1) {
@@ -242,21 +301,21 @@ function handleInterimMessage(message) {
 				else if (commands[0] === "vklopi" || commands[0] === "vključi") {
 					if (Utilities.getColor(commands[1]) != null) {
 						WordUtils.deleteLastWord(2).then(function () {
-							AppState.fontStyle.color = Utilities.getColor(commands[1])
+							AppState.setColor(Utilities.getColor(commands[1]))
 							currentCommand(commands.join(" "), true)
 							WordUtils.deleteWhiteSpace()
 						})
 					} else if (commands[1] == "velike" || commands[1] == "veliko" || commands[1] == "velika") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka")
 						WordUtils.deleteLastWord(3).then(function () {
-							AppState.fontStyle.upperCase = true
+							AppState.toggleCase(true)
 							currentCommand(commands.join(" "), true)
 							WordUtils.deleteWhiteSpace()
 						})
 					} else if (commands[1] == "male" || commands[1] == "mali" || commands[1] == "malo") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka") {
 							WordUtils.deleteLastWord(3).then(function () {
-								AppState.fontStyle.upperCase = false
+								AppState.toggleCase(false)
 								currentCommand(commands.join(" "), true)
 								WordUtils.deleteWhiteSpace()
 							})
@@ -264,7 +323,7 @@ function handleInterimMessage(message) {
 					} else if (commands[1] == "debele" || commands[1] == "krepke") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka") {
 							WordUtils.deleteLastWord(3).then(function () {
-								AppState.fontStyle.isBold = true
+								AppState.toggleBold(true)
 								currentCommand(commands.join(" "), true)
 								WordUtils.deleteWhiteSpace()
 							})
@@ -272,7 +331,7 @@ function handleInterimMessage(message) {
 					} else if (commands[1] == "poševne" || commands[1] == "nagnjene") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka") {
 							WordUtils.deleteLastWord(3).then(function () {
-								AppState.fontStyle.isItalic = true
+								AppState.toggleItalic(true)
 								currentCommand(commands.join(" "), true)
 								WordUtils.deleteWhiteSpace()
 							})
@@ -284,7 +343,7 @@ function handleInterimMessage(message) {
 					if (commands[1] == "velike" || commands[1] == "veliko" || commands[1] == "velika") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka") {
 							WordUtils.deleteLastWord(3).then(function () {
-								AppState.fontStyle.upperCase = false
+								AppState.toggleCase(false)
 								currentCommand(commands.join(" "), true)
 								WordUtils.deleteWhiteSpace()
 							})	
@@ -292,7 +351,7 @@ function handleInterimMessage(message) {
 					} else if (commands[1] == "debele" || commands[1] == "krepke") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka") {
 							WordUtils.deleteLastWord(3).then(function () {
-								AppState.fontStyle.isBold = false
+								AppState.toggleBold(false)
 								currentCommand(commands.join(" "), true)
 								WordUtils.deleteWhiteSpace()
 							})
@@ -300,7 +359,7 @@ function handleInterimMessage(message) {
 					} else if (commands[1] == "poševne" || commands[1] == "nagnjene") {
 						if (commands[2] == "črke" || commands[2] == "črko" || commands[2] == "črka") {
 							WordUtils.deleteLastWord(3).then(function () {
-								AppState.fontStyle.isItalic = false
+								AppState.toggleItalic(false)
 								currentCommand(commands.join(" "), true)
 								WordUtils.deleteWhiteSpace()
 							})
@@ -316,6 +375,15 @@ function handleInterimMessage(message) {
 						})
 					}	
 				}
+				// else if (commands[0] === "poišči" && commands.length > 1) {
+				// 	WordUtils.deleteLastWord(commands.length).then(function () {
+				// 		AppState.selectingString = true
+				// 		currentCommand(commands.join(" "), true)
+				// 		commands[0] = ""
+				// 		AppState.selectedString = commands.join(" ")
+				// 		WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, true, 0, setStringIndex)
+				// 	})	
+				// }
 				else if (commands[0] === "nova" || commands[0] === "novo" || commands[0] === "nov") {
 					if (commands[1] === "vrstica" || commands[1] === "vrsta") {
 						WordUtils.deleteLastWord(2).then(function () {
@@ -336,16 +404,14 @@ function handleInterimMessage(message) {
 			}
 
 		} else {
-			if (!AppState.selectingSentence)
-				handleInsertion(AppState.oldInterim, AppState.newInterim)
+			handleInsertion(AppState.oldInterim, AppState.newInterim)
 		}
 
 		AppState.oldInterim = ""
 		AppState.newInterim = ""
 
 	} else {
-		if (!AppState.selectingSentence)
-			handleInsertion(AppState.oldInterim, AppState.newInterim)
+		handleInsertion(AppState.oldInterim, AppState.newInterim)
 	}
 
 }
@@ -441,28 +507,128 @@ function handleSentenceSelectionCommands(commands) {
 	}
 }
 
+function handleStringSelectionCommands(commands) {
+
+	//
+	// NOT YET WORKING
+	//
+
+	let style = {
+		color: null,
+		isBold: null,
+		isItalic: null,
+		upperCase: null,
+		size: null
+	}
+
+	if (commands[0] === "naprej") {
+		if (commands.length > 1 && Utilities.isNumber(commands[1])) {
+			WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, true, Utilities.getNumber(commands[1]), setStringIndex)
+		} else {
+			WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, true, 1, setStringIndex)
+		}
+		currentCommand(commands[0], true)
+	}
+	else if (commands[0] === "nazaj") {
+		if (commands.length > 1 && Utilities.isNumber(commands[1])) {
+			WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, false, Utilities.getNumber(commands[1]), setStringIndex)
+			currentCommand(commands.join(" "), true)
+		} else {
+			WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, false, 1, setStringIndex)
+			currentCommand(commands[0], true)
+		}
+	} else if (commands[0] === "briši" || commands[0] === "zbriši" || commands[0] === "pobriši" || commands[0] === "izbriši") {
+		WordUtils.deleteSelectedSentence(AppState.selectingStringIndex, setStringIndex).then(function () {
+			currentCommand(commands[0], true)
+			WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, true, 0, setStringIndex)
+		})
+	} else if (commands[0] === "velikost") {
+		if (Utilities.isNumber(commands[1])) {
+			style.size = Utilities.getNumber(commands[1])
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} 
+	} else if (commands[0] === "vklopi" || commands[0] === "vključi") {
+		let color = Utilities.getColor(commands[1])
+		if (color != null) {
+			style.color = Utilities.getColor(commands[1])
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if ((commands[1] == "velike" || commands[1] == "veliko" || commands[1] == "velika") && Utilities.isCrka(commands[2])) {
+			style.upperCase = true
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if ((commands[1] == "male" || commands[1] == "mali" || commands[1] == "malo") && Utilities.isCrka(commands[2])) {
+			style.upperCase = false
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if ((commands[1] == "debele" || commands[1] == "krepke") && Utilities.isCrka(commands[2])) {
+			style.isBold = true
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if (commands[1] == "poševne" || commands[1] == "nagnjene" && Utilities.isCrka(commands[2])) {
+			style.isItalic = true
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else {
+			currentCommand(commands.join(" "), false)
+		}
+	} else if (commands[0] === "izklopi" || commands[0] === "izključi") {
+		if ((commands[1] == "velike" || commands[1] == "veliko" || commands[1] == "velika") && Utilities.isCrka(commands[2])) {
+			style.upperCase = false
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if ((commands[1] == "male" || commands[1] == "mali" || commands[1] == "malo") && Utilities.isCrka(commands[2])) {
+			style.upperCase = true
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if ((commands[1] == "debele" || commands[1] == "krepke") && Utilities.isCrka(commands[2])) {
+			style.isBold = false
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else if ((commands[1] == "poševne" || commands[1] == "nagnjene") && Utilities.isCrka(commands[2])) {
+			style.isItalic = false
+			currentCommand(commands.join(" "), true)
+			WordUtils.applyStyleToSentence(AppState.selectingStringIndex, style)
+		} else {
+			currentCommand(commands.join(" "), false)
+		}
+	} else if (commands[0] === "končaj" || commands[0] === "konča" || commands[0] === "konec") {
+		AppState.selectingString = false
+		currentCommand(commands.join(" "), true, true)
+		WordUtils.selectString(AppState.selectedString, AppState.selectingStringIndex, false, 1, setStringIndex, true)
+	} else {
+		currentCommand(commands.join(" "), false)
+	}
+}
+
 function setIndex(newIndex) {
 	AppState.selectingSentenceIndex = newIndex
 }
 
+function setStringIndex(newIndex) {
+	AppState.selectingStringIndex = newIndex
+}
+
 function handleInsertion(old, newer) {
-	if (old !== newer) {
-		if (old === "") {
-			console.log("inserting word")
-			WordUtils.insertWord(newer, "End", AppState.fontStyle).then(function () {
-				WordUtils.deleteWhiteSpace().then(function () {
-					WordUtils.applyStyles(newer, AppState.fontStyle)
+	if (!AppState.selectingSentence && !AppState.selectingString) {
+		if (old !== newer) {
+			if (old === "") {
+				console.log("inserting word")
+				WordUtils.insertWord(newer, "End", AppState.fontStyle).then(function () {
+					WordUtils.deleteWhiteSpace().then(function () {
+						WordUtils.applyStyles(newer, AppState.fontStyle)
+					})
 				})
-			})
-		} else {
-			console.log("deletingandreplacing")
-			WordUtils.deleteAndReplaceLatestMatch(old, newer, AppState.fontStyle).then(function () {
-				WordUtils.deleteWhiteSpace().then(function () {
-					WordUtils.applyStyles(newer, AppState.fontStyle)
+			} else {
+				console.log("deletingandreplacing")
+				WordUtils.deleteAndReplaceLatestMatch(old, newer, AppState.fontStyle).then(function () {
+					WordUtils.deleteWhiteSpace().then(function () {
+						WordUtils.applyStyles(newer, AppState.fontStyle)
+					})
 				})
-			})
+			}
 		}
-			
 	}
 }
 
@@ -508,6 +674,7 @@ function handleStorageOnSuccess(username, password) {
 }
 
 function handleUIOnSuccess() {
+	document.getElementById("style-container").hidden = false
 	document.getElementById("spinnerContainer").hidden = true
 	document.getElementById("settingsContainer").hidden = false
 	if (document.getElementById("collapseAuth").classList.contains("show")) {
@@ -571,7 +738,7 @@ function listenerSetup() {
 		if (AppState.truebarClient == undefined) {
 			await createTruebarClient(isAuthError)
 		}
-		
+
 		await openSession()
 	
 		AppState.microphone = new Microphone();

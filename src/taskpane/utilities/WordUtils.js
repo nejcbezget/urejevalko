@@ -245,6 +245,58 @@ export default class WordUtils {
         
     }
 
+    static async selectString(string, index = -1, forward = true,  moveBy = 1, setStringIndex, finish = false) {
+        
+        await Word.run(function (context) {
+            
+            console.log("SEARCHING: " + string)
+            let searchResults = context.document.body.search(string,  {ignorePunct: true})
+            context.load(searchResults);
+
+            return context.sync().then(function () {
+                
+                for (var i = 0; i < searchResults.items.length; i++) {
+                    console.log(searchResults.items[i].text)
+                    searchResults.items[i].load("font")
+                }
+                
+                return context.sync().then(function () {
+                    
+                    if (finish) {
+                        searchResults.items[index].font.highlightColor = null
+                        setStringIndex(-1)
+                    } else if (index == -1) {
+                        console.log("INDEX = -1: ")
+                        let newIndex = searchResults.items.length - 1
+                        console.log("newindex = " + newIndex)
+                        searchResults.items[newIndex].font.highlightColor = "yellow"
+                        setStringIndex(newIndex)
+                    } else if (moveBy == 0) {
+                        searchResults.items[index].font.highlightColor = "yellow"
+                    } else {
+                        if (forward) {
+                            let newIndex = Math.min(searchResults.items.length - 1, index + moveBy)
+                            searchResults.items[index].font.highlightColor = null
+                            searchResults.items[newIndex].font.highlightColor = "yellow"
+                            setStringIndex(newIndex)
+                        } else {
+                            let newIndex = Math.max(0, index - moveBy)
+                            searchResults.items[index].font.highlightColor = null
+                            searchResults.items[newIndex].font.highlightColor = "yellow"
+                            setStringIndex(newIndex)
+                        }
+                    }
+                })
+            })
+        }).catch(function (error) {
+            console.log('Error: ' + JSON.stringify(error));
+            if (error instanceof OfficeExtension.Error) {
+                console.log('Debug info: ' + JSON.stringify(error.debugInfo));
+            }
+        });
+        
+    }
+
     static async deleteWhiteSpace() {
         
         await Word.run(function (context) {
