@@ -74,6 +74,37 @@
         <button id="stopBtn" type="button" class="btn-round-stop breathing-button" style="display: none;">Stop</button>
     </div>
 
+    <div class="row justify-content-center mx-3">
+        <div id="current-command" class="alert alert-warning alert-success col-auto" hidden>
+            Komanda
+        </div>
+    </div>
+
+    <div id="style-container" class="row justify-content-center mb-5" hidden>
+        <ul class="list-group w-50">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Barva
+                <div id="current-color" class="rounded-circle" style="background-color: black; height: 20px; width: 20px;"></div>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Krepke črke
+                <span id="current-bold" class="badge badge-primary badge-secondary  badge-pill">Izključeno</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Poševne črke
+                <span id="current-italic" class="badge badge-primary badge-secondary badge-pill">Izključeno</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Velike črke
+                <span id="current-uppercase" class="badge badge-primary badge-secondary badge-pill">Izključeno</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Velikost pisave
+                <span id="current-size" class="badge badge-secondary badge-pill">11</span>
+            </li>
+        </ul>
+    </div>
+
     <div class="row justify-content-center m-2">
         <div id="accordion2" class="col-md-8">
             

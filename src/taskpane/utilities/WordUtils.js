@@ -60,49 +60,7 @@ export default class WordUtils {
             });
         }
         
-    }
-
-    static async insertString(string, location) {
-        await Word.run(function (context) {
-    
-            let selection = context.document.getSelection()
-            context.load(selection);
-
-            return context.sync().then(function () {
-                selection.select(location)
-                selection.insertText(string, location)
-                
-                return context.sync()
-            })
-        })
-        .catch(function (error) {
-                if (error instanceof OfficeExtension.Error) {
-                        console.log("Debug info: " + JSON.stringify(error.debugInfo));
-                }
-        });
-    }
-
-    static insertAtCursor(string) {
-        Word.run(function (context) {
-    
-            let cursorOrSelection = context.document.getSelection();
-            context.load(cursorOrSelection);
-
-            return context.sync().then(function () {
-      
-                cursorOrSelection.insertText(string, Word.InsertLocation.before);
-        
-                return context.sync();
-            });
-
-        })
-        .catch(function (error) {
-                if (error instanceof OfficeExtension.Error) {
-                        console.log("Debug info: " + JSON.stringify(error.debugInfo));
-                }
-        });
-    }
-    
+    }    
 
     static delete(string) {
         Word.run(function (context) {
@@ -153,7 +111,7 @@ export default class WordUtils {
                 });  
             })
             .catch(function (error) {
-                console.log('Error: ' + JSON.stringify(error));
+                // console.log('Error: ' + JSON.stringify(error));
             });
         }
     }
@@ -195,29 +153,6 @@ export default class WordUtils {
         
     }
 
-    static replaceAll(string) {
-        Word.run(function (context) {
-      
-          var searchResults = context.document.body.search(string, {ignorePunct: false});
-          context.load(searchResults);
-      
-          return context.sync().then(function () {
-      
-              for (var i = 0; i < searchResults.items.length; i++) {                  
-                  searchResults.items[i].clear()
-              }
-      
-              return context.sync();
-          });  
-      })
-      .catch(function (error) {
-          console.log('Error: ' + JSON.stringify(error));
-          if (error instanceof OfficeExtension.Error) {
-              console.log('Debug info: ' + JSON.stringify(errorw.debugInfo));
-          }
-      });
-    }
-
     static async deleteLastSentence(repeats = 1, delimiters = [",", ".", '?', '!', ':', ';']) {
         for (var i = 0; i < repeats; i++) {
             await Word.run(function (context) {
@@ -244,26 +179,6 @@ export default class WordUtils {
                 })
               })
         } 
-    }
-
-    static async trimLastSentence(delimiters = [",", ".", '?', '!', ':', ';']) {
-        
-        await Word.run(function (context) {
-            // let sentences = context.document.getSelection().getTextRanges([".", '?', '!', ':', ';', '\n', '\t', '\r'], false);
-            let sentences = context.document.body.getRange("End").getTextRanges(delimiters, true);
-            
-            context.load(sentences);
-            
-            return context.sync().then(function () {
-
-                let sentence = sentences.items[sentences.items.length-1].text.replace(/\s+/g, ' ').trim()
-                console.log("trimming sentence: " + sentence)
-                sentences.items[sentences.items.length-1].insertText(sentence, "Replace")
-                
-                return context.sync()
-            })
-        })
-        
     }
 
     static async selectSentence(index = -1, forward = true,  moveBy = 1, setIndex, finish = false) {
@@ -330,6 +245,58 @@ export default class WordUtils {
         
     }
 
+    static async selectString(string, index = -1, forward = true,  moveBy = 1, setStringIndex, finish = false) {
+        
+        await Word.run(function (context) {
+            
+            console.log("SEARCHING: " + string)
+            let searchResults = context.document.body.search(string,  {ignorePunct: true})
+            context.load(searchResults);
+
+            return context.sync().then(function () {
+                
+                for (var i = 0; i < searchResults.items.length; i++) {
+                    console.log(searchResults.items[i].text)
+                    searchResults.items[i].load("font")
+                }
+                
+                return context.sync().then(function () {
+                    
+                    if (finish) {
+                        searchResults.items[index].font.highlightColor = null
+                        setStringIndex(-1)
+                    } else if (index == -1) {
+                        console.log("INDEX = -1: ")
+                        let newIndex = searchResults.items.length - 1
+                        console.log("newindex = " + newIndex)
+                        searchResults.items[newIndex].font.highlightColor = "yellow"
+                        setStringIndex(newIndex)
+                    } else if (moveBy == 0) {
+                        searchResults.items[index].font.highlightColor = "yellow"
+                    } else {
+                        if (forward) {
+                            let newIndex = Math.min(searchResults.items.length - 1, index + moveBy)
+                            searchResults.items[index].font.highlightColor = null
+                            searchResults.items[newIndex].font.highlightColor = "yellow"
+                            setStringIndex(newIndex)
+                        } else {
+                            let newIndex = Math.max(0, index - moveBy)
+                            searchResults.items[index].font.highlightColor = null
+                            searchResults.items[newIndex].font.highlightColor = "yellow"
+                            setStringIndex(newIndex)
+                        }
+                    }
+                })
+            })
+        }).catch(function (error) {
+            console.log('Error: ' + JSON.stringify(error));
+            if (error instanceof OfficeExtension.Error) {
+                console.log('Debug info: ' + JSON.stringify(error.debugInfo));
+            }
+        });
+        
+    }
+
     static async deleteWhiteSpace() {
         
         await Word.run(function (context) {
@@ -366,48 +333,6 @@ export default class WordUtils {
         
     }
 
-    static async trimLastParagraph() {
-        
-        await Word.run(function (context) {
-
-            let paragraphs = context.document.body.paragraphs
-            context.load(paragraphs);
-            
-            return context.sync().then(function () {
-
-                let paragraph = paragraphs.items[paragraphs.items.length-1].text.replace(/\s+/g, ' ').trim()
-                console.log("trimming paragraph: " + paragraph)
-                paragraphs.items[paragraphs.items.length-1].insertText(paragraph, "Replace")
-
-                var html =paragraphs.items[paragraphs.items.length-1].getHtml();
-                
-                return context.sync().then(function () {
-                    console.log('Paragraph HTML: ' + html.value);
-                });
-            })
-        })
-        
-    }
-
-    static async trimDocument() {
-        await Word.run(function (context) {
-    
-            let docBody = context.document.body
-            context.load(docBody);
-
-        
-            return context.sync().then(function () {
-                let text = docBody.text.replace(/\s+/g, ' ').trim()
-                docBody.insertText(text, "Replace")
-            })
-        })
-        .catch(function (error) {
-                if (error instanceof OfficeExtension.Error) {
-                        console.log("Debug info: " + JSON.stringify(error.debugInfo));
-                }
-        });
-    }
-
     static async deleteLastWord(repeats = 1, trimSpacing = false) {
         for (var i = 0; i < repeats; i++) {                  
             await Word.run(function (context) {
@@ -427,7 +352,6 @@ export default class WordUtils {
         }
         
     }
-
 
     static deleteParagraph() {
         Word.run(function (context) {
