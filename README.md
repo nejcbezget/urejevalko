@@ -4,6 +4,7 @@ Use voice commands in Slovene to dictate text and edit Word documents.
 ### Prerequisites
 - NodeJS:  https://nodejs.org/en/download/
 - Licensed version of Microsoft Word
+- Api key to use [Truebar](https://developers.vitasis.si/) services
 
 ### Setting up
 1. Clone the repository
